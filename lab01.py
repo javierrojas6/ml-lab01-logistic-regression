@@ -65,30 +65,25 @@ def saveModel(models, modelFileName):
 
 # %% train the model
 def trainModels(models, x, y, learningRate=1e-3):
-    index = 3
-    model = models[index]
+    for i, model in enumerate(models):
 
-    print("model", model.label)
-    print("Y", y)
+        print("\ntraining model: ", model.label)
 
-    y3 = np.matrix(np.array([1 if item == int(model.label) else 0 for item in y]))
+        yTemp = np.matrix(np.array([1 if item == int(model.label) else 0 for item in y]))
+        modelCost = PUJ.Model.Logistic.Cost(model, x, yTemp.T)
+        # # Debugger
+        debugger = PUJ.Optimizer.Debug.Simple
+        # debugger = PUJ.Optimizer.Debug.PlotPolynomialCost(x, yTemp.T)
 
-    print("y3", np.matrix(y3).T.shape)
+        # Fit using an optimization algorithm
+        opt = PUJ.Optimizer.GradientDescent(modelCost)
+        opt.setDebugFunction(debugger)
+        opt.setLearningRate(learningRate)
+        opt.setNumberOfIterations(200)
+        opt.setNumberOfDebugIterations(10)
+        opt.Fit()
 
-    modelCost = PUJ.Model.Logistic.Cost(model, x, y3.T)
-    # # Debugger
-    debugger = PUJ.Optimizer.Debug.Simple
-    # debugger = PUJ.Optimizer.Debug.PlotPolynomialCost(x, y3.T)
-
-    # Fit using an optimization algorithm
-    opt = PUJ.Optimizer.GradientDescent(modelCost)
-    opt.setDebugFunction(debugger)
-    opt.setLearningRate(learningRate)
-    opt.setNumberOfIterations(200)
-    opt.setNumberOfDebugIterations(10)
-    opt.Fit()
-
-    models[3] = model
+        models[i] = model
 
     return models
 
