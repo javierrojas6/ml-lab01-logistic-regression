@@ -1,4 +1,5 @@
 # %% Librerias
+from black import out
 import numpy as np
 import random
 import pandas as pd
@@ -6,6 +7,8 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
 
 # libreria local
 import PUJ.Model.Logistic
@@ -22,10 +25,11 @@ tf.keras.datasets.mnist.load_data(path="mnist.npz")
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 X = np.concatenate((x_train, x_test), axis=0)
 Y = np.concatenate((y_train, y_test), axis=0)
-X = X.reshape((X.shape[0], X.shape[1] * X.shape[2]))
+
+XFlattened = X.reshape((X.shape[0], X.shape[1] * X.shape[2]))
 labels = sorted(set(Y))
 
-print("X.shape", X.shape)
+print("X.shape", XFlattened.shape)
 print("Labels", labels)
 
 # %% draw number
@@ -88,15 +92,73 @@ def trainModels(models, x, y, learningRate=1e-3):
     return models
 
 
+def loadModels(filename):
+    models_file = open(filename, "r")
+    models_lines = models_file.readlines()
+    models_file.close()
+
+    labels = []
+    models = []
+    for l in models_lines[1:]:
+        d = l.split()
+        labels += [d[0]]
+        model = PUJ.Model.Logistic()
+        model.label = str(d[0])
+        model.setParameters([float(v) for v in d[2:]])
+        models += [model]
+
+    return models
+
+
+def evaluateAll(models, X):
+    estimatedLabels = []
+    for row in X:
+        estimatedLabels += [evaluate(models, row)]
+    return np.array(estimatedLabels)
+
+
+def evaluate(models, image):
+    flatImage = image.reshape((image.shape[0] * image.shape[1]))
+    results = []
+    for model in models:
+        results += [model.evaluate(flatImage)[0, 0]]
+
+    return results.index(max(results))
+
+
+def generateConfusionMatrix(realY, estimatedY, size=2):
+    """
+    Generate a confusion matrix
+
+    :param realY: The actual labels of the data
+    :param estimatedY: the estimated labels of the data points
+    :param size: the number of classes, defaults to 2 (optional)
+    """
+    matrix = np.zeros((size, size))
+    for i in range(realY.shape[0]):
+        matrix[int(realY[i]), int(estimatedY[i])] += 1
+
+    return matrix
+
+
+def metrics(y_real, y_estimated, labels):
+    cm = confusion_matrix(y_real, y_estimated, labels=labels)
+    cr = classification_report(y_real, y_estimated, labels=labels)
+    return cm, cr
+
+
 # %% Main
-models = initializeModel(labels, X.shape[1], seed=12)
-saveModel(models, MODEL_WEIGHTS)
-X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size=0.7, shuffle=True)
+# models = initializeModel(labels, XFlattened.shape[1], seed=12)
+# saveModel(models, MODEL_WEIGHTS)
+# X_train, X_test, y_train, y_test = train_test_split(XFlattened, Y, train_size=0.7, shuffle=True)
 
-print("X_train: ", X_train.shape)
-trainedModels = trainModels(models, X_train, y_train)
-saveModel(trainedModels, "mnists_weights2.txt")
+# trainedModels = trainModels(models, X_train, y_train)
+# saveModel(trainedModels, "mnists_weights2.txt")
 
 
-# %% cost function
-# cost = PUJ.Model.Logistic.Cost(model, x_train, y_train)
+models = loadModels("./trained_weights/mnists_weights_trained_10000.txt")
+estimatedY = evaluateAll(models, x_test)
+cm, cr = metrics(y_test, estimatedY, labels)
+
+print(cm)
+print(cr)
