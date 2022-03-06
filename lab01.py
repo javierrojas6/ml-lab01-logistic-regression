@@ -41,6 +41,7 @@ def drawNumber(numberArray, label):
 
 
 # %% initialize all models
+# Initialize models
 def initializeModel(labels, paramsSize, seed=0):
     if seed > 0:
         random.seed(seed)
@@ -58,6 +59,7 @@ def initializeModel(labels, paramsSize, seed=0):
 
 
 # %% Saves the model
+# Saves the model on a file
 def saveModel(models, modelFileName):
     buffer = str(len(labels))
     for model in models:
@@ -68,6 +70,7 @@ def saveModel(models, modelFileName):
 
 
 # %% train the model
+# train the model
 def trainModels(models, x, y, learningRate=1e-3):
     for i, model in enumerate(models):
 
@@ -91,7 +94,8 @@ def trainModels(models, x, y, learningRate=1e-3):
 
     return models
 
-
+# %% Load models using a file with its weights
+# Load models using a file with its weights
 def loadModels(filename):
     models_file = open(filename, "r")
     models_lines = models_file.readlines()
@@ -109,7 +113,8 @@ def loadModels(filename):
 
     return models
 
-
+# %% evaluate all trained models
+# evaluate all trained models
 def evaluateAll(models, X):
     estimatedLabels = []
     for row in X:
@@ -117,6 +122,8 @@ def evaluateAll(models, X):
     return np.array(estimatedLabels)
 
 
+# %% evaluate one trained model
+# evaluate one trained model
 def evaluate(models, image):
     flatImage = image.reshape((image.shape[0] * image.shape[1]))
     results = []
@@ -125,7 +132,8 @@ def evaluate(models, image):
 
     return results.index(max(results))
 
-
+# %% generate confusion matrix
+# generate confusion matrix
 def generateConfusionMatrix(realY, estimatedY, size=2):
     """
     Generate a confusion matrix
@@ -140,25 +148,40 @@ def generateConfusionMatrix(realY, estimatedY, size=2):
 
     return matrix
 
-
+# %% show all metric in all evaluation
+# show all metric in all evaluation
 def metrics(y_real, y_estimated, labels):
     cm = confusion_matrix(y_real, y_estimated, labels=labels)
     cr = classification_report(y_real, y_estimated, labels=labels)
     return cm, cr
 
 
-# %% Main
+# %% Main flow
+
+# # load random weight in a new model
 # models = initializeModel(labels, XFlattened.shape[1], seed=12)
+
+# # save the initial weight in a file
 # saveModel(models, MODEL_WEIGHTS)
+
+# # split randonly the dataset into train and test dataset
 # X_train, X_test, y_train, y_test = train_test_split(XFlattened, Y, train_size=0.7, shuffle=True)
 
+# # train all models
 # trainedModels = trainModels(models, X_train, y_train)
-# saveModel(trainedModels, "mnists_weights2.txt")
 
+# # save the new weight into a file
+# saveModel(trainedModels, "mnists_weights_trained.txt")
 
+# load the weights from the file
 models = loadModels("./trained_weights/mnists_weights_trained_10000.txt")
+
+# evaluate the model usin the test dataset
 estimatedY = evaluateAll(models, x_test)
+
+# generate the metric using the results from test dataset
 cm, cr = metrics(y_test, estimatedY, labels)
 
+# print the metrics
 print(cm)
 print(cr)
