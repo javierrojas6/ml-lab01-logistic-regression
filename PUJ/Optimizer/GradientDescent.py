@@ -8,6 +8,8 @@ class GradientDescent:
 
   '''
   '''
+  m_lambda = 0.0
+  m_regularization_type = 'ridge'
   m_Cost = None
   m_LearningRate = 1e-2
   m_Epsilon = 1e-12
@@ -20,6 +22,14 @@ class GradientDescent:
   '''
   def __init__( self, cost ):
     self.m_Cost = cost
+  # end def
+
+  def setRegularization( self, r ):
+    self.m_lambda = r
+  # end def
+
+  def setRegularizationType( self, r ):
+    self.m_regularization_type = r
   # end def
 
   def setLearningRate( self, a ):
@@ -53,6 +63,14 @@ class GradientDescent:
     while not stop:
       self.m_Cost.updateModel( -self.m_LearningRate * g )
       [ J1, g ] = self.m_Cost.evaluate( True )
+      if self.m_lambda > 0:
+        if self.m_regularization_type == 'ridge':
+          J1 += self.m_lambda * (self.m_Cost.m_Model.m_P @ self.m_Cost.m_Model.m_P.T).sum()
+          g += 2.0 * self.m_lambda * self.m_Cost.m_Model.m_P.sum()
+        elif self.m_regularization_type == 'lasso':
+          J1 += self.m_lambda * numpy.abs( self.m_Cost.m_Model.m_P ).sum( )
+          g += self.m_lambda * ( self.m_Cost.m_Model.m_P > 0 ).astype( g.dtype ).sum( )
+          g -= self.m_lambda * ( self.m_Cost.m_Model.m_P < 0 ).astype( g.dtype ).sum( )
       if not self.m_DebugFunction is None:
         stop = self.m_DebugFunction( self.m_Cost.model( ), self.m_RealIterations, J1, J0 - J1, self.m_RealIterations % self.m_NumberOfDebugIterations == 0 )
       # end if

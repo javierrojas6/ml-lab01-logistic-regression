@@ -4,11 +4,11 @@ import numpy as np
 import random
 import pandas as pd
 import tensorflow as tf
-import tensorflow_datasets as tfds
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
+from sklearn import preprocessing
 
 # libreria local
 import PUJ.Model.Logistic
@@ -17,20 +17,6 @@ import PUJ.Model.Logistic
 # constants
 
 MODEL_WEIGHTS = "mnists_weights.txt"
-
-# %% download MINST dataset
-# download MINST dataset
-tf.keras.datasets.mnist.load_data(path="mnist.npz")
-
-(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-X = np.concatenate((x_train, x_test), axis=0)
-Y = np.concatenate((y_train, y_test), axis=0)
-
-XFlattened = X.reshape((X.shape[0], X.shape[1] * X.shape[2]))
-labels = sorted(set(Y))
-
-print("X.shape", XFlattened.shape)
-print("Labels", labels)
 
 # %% draw number
 ## draw number
@@ -83,8 +69,8 @@ def trainModels(models, x, y, learningRate=1e-3):
         opt = PUJ.Optimizer.GradientDescent(modelCost)
         opt.setDebugFunction(debugger)
         opt.setLearningRate(learningRate)
-        opt.setNumberOfIterations(200)
-        opt.setNumberOfDebugIterations(10)
+        opt.setNumberOfIterations(5000)
+        opt.setNumberOfDebugIterations(100)
         opt.Fit()
 
         models[i] = model
@@ -118,10 +104,9 @@ def evaluateAll(models, X):
 
 
 def evaluate(models, image):
-    flatImage = image.reshape((image.shape[0] * image.shape[1]))
     results = []
     for model in models:
-        results += [model.evaluate(flatImage)[0, 0]]
+        results += [model.evaluate(image)[0, 0]]
 
     return results.index(max(results))
 
@@ -146,18 +131,43 @@ def metrics(y_real, y_estimated, labels):
     cr = classification_report(y_real, y_estimated, labels=labels)
     return cm, cr
 
+# %% download MINST dataset
+# download MINST dataset
+tf.keras.datasets.mnist.load_data(path="mnist.npz")
 
-# %% Main
-# models = initializeModel(labels, XFlattened.shape[1], seed=12)
-# saveModel(models, MODEL_WEIGHTS)
-# X_train, X_test, y_train, y_test = train_test_split(XFlattened, Y, train_size=0.7, shuffle=True)
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
-# trainedModels = trainModels(models, X_train, y_train)
-# saveModel(trainedModels, "mnists_weights2.txt")
+X = np.concatenate((x_train, x_test), axis=0)
+Y = np.concatenate((y_train, y_test), axis=0)
+labels = sorted(set(Y))
 
+X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size=0.7, shuffle=True)
 
-models = loadModels("./trained_weights/mnists_weights_trained_10000.txt")
-estimatedY = evaluateAll(models, x_test)
+#aplanar y estandarizar entrenamiento
+XFlattened_train = X_train.reshape((X_train.shape[0], X_train.shape[1] * X_train.shape[2]))
+XFlattened_train = preprocessing.scale(XFlattened_train)
+
+#aplanar y estandarizar test
+XFlattened_test = X_test.reshape((X_test.shape[0], X_test.shape[1] * X_test.shape[2]))
+XFlattened_test = preprocessing.scale(XFlattened_test)
+
+models = initializeModel(labels, XFlattened_train.shape[1], seed=12)
+saveModel(models, MODEL_WEIGHTS)
+
+trainedModels = trainModels(models, XFlattened_train, y_train)
+saveModel(trainedModels, "./trained_weights/mnists_weights.txt")
+
+models = loadModels("./trained_weights/mnists_weights.txt")
+
+print("METRICAS EN ENTRENAMIENTO")
+estimatedY = evaluateAll(models, XFlattened_train)
+cm, cr = metrics(y_train, estimatedY, labels)
+
+print(cm)
+print(cr)
+
+print("METRICAS EN TEST")
+estimatedY = evaluateAll(models, XFlattened_test)
 cm, cr = metrics(y_test, estimatedY, labels)
 
 print(cm)
