@@ -5,6 +5,7 @@ import random
 import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from pandas.io.formats.style_render import Subset
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
@@ -54,7 +55,7 @@ def saveModel(models, modelFileName):
 
 
 # %% train the model
-def trainModels(models, x, y, learningRate=1e-3):
+def trainModels(models, x, y, learningRate=1e-2):
     for i, model in enumerate(models):
 
         print("\ntraining model: ", model.label)
@@ -69,7 +70,7 @@ def trainModels(models, x, y, learningRate=1e-3):
         opt = PUJ.Optimizer.GradientDescent(modelCost)
         opt.setDebugFunction(debugger)
         opt.setLearningRate(learningRate)
-        opt.setNumberOfIterations(5000)
+        opt.setNumberOfIterations(10000)
         opt.setNumberOfDebugIterations(100)
         opt.Fit()
 
