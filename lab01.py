@@ -1,5 +1,4 @@
 # %% Librerias
-from black import out
 import numpy as np
 import random
 import pandas as pd
@@ -16,7 +15,10 @@ import PUJ.Model.Logistic
 # %% constants
 # constants
 
-MODEL_WEIGHTS = "mnists_weights.txt"
+MODEL_WEIGHTS_FILENAME = "./mnists_weights.txt"
+ITERATIONS = 10000
+ITERATION_WATCH = 1000
+RANDOM_SEED = 20
 
 # %% download MINST dataset
 # download MINST dataset
@@ -73,7 +75,6 @@ def saveModel(models, modelFileName):
 # train the model
 def trainModels(models, x, y, learningRate=1e-3):
     for i, model in enumerate(models):
-
         print("\ntraining model: ", model.label)
 
         yTemp = np.matrix(np.array([1 if item == int(model.label) else 0 for item in y]))
@@ -86,13 +87,14 @@ def trainModels(models, x, y, learningRate=1e-3):
         opt = PUJ.Optimizer.GradientDescent(modelCost)
         opt.setDebugFunction(debugger)
         opt.setLearningRate(learningRate)
-        opt.setNumberOfIterations(200)
-        opt.setNumberOfDebugIterations(10)
+        opt.setNumberOfIterations(ITERATIONS)
+        opt.setNumberOfDebugIterations(ITERATION_WATCH)
         opt.Fit()
 
         models[i] = model
 
     return models
+
 
 # %% Load models using a file with its weights
 # Load models using a file with its weights
@@ -113,6 +115,7 @@ def loadModels(filename):
 
     return models
 
+
 # %% evaluate all trained models
 # evaluate all trained models
 def evaluateAll(models, X):
@@ -125,12 +128,13 @@ def evaluateAll(models, X):
 # %% evaluate one trained model
 # evaluate one trained model
 def evaluate(models, image):
-    flatImage = image.reshape((image.shape[0] * image.shape[1]))
+    flatImage = image if len(image.shape) == 1 else image.reshape((image.shape[0] * image.shape[1]))
     results = []
     for model in models:
         results += [model.evaluate(flatImage)[0, 0]]
 
     return results.index(max(results))
+
 
 # %% generate confusion matrix
 # generate confusion matrix
@@ -148,6 +152,7 @@ def generateConfusionMatrix(realY, estimatedY, size=2):
 
     return matrix
 
+
 # %% show all metric in all evaluation
 # show all metric in all evaluation
 def metrics(y_real, y_estimated, labels):
@@ -158,30 +163,37 @@ def metrics(y_real, y_estimated, labels):
 
 # %% Main flow
 
-# # load random weight in a new model
-# models = initializeModel(labels, XFlattened.shape[1], seed=12)
+# load random weight in a new model
+# models = initializeModel(labels, XFlattened.shape[1], seed=RANDOM_SEED)
 
 # # save the initial weight in a file
-# saveModel(models, MODEL_WEIGHTS)
+# saveModel(models, MODEL_WEIGHTS_FILENAME)
 
 # # split randonly the dataset into train and test dataset
-# X_train, X_test, y_train, y_test = train_test_split(XFlattened, Y, train_size=0.7, shuffle=True)
-
+X_train, X_test, y_train, y_test = train_test_split(XFlattened, Y, train_size=0.7, shuffle=True, random_state=np.random)
 # # train all models
 # trainedModels = trainModels(models, X_train, y_train)
 
 # # save the new weight into a file
-# saveModel(trainedModels, "mnists_weights_trained.txt")
+# saveModel(trainedModels, MODEL_WEIGHTS_FILENAME)
 
 # load the weights from the file
-models = loadModels("./trained_weights/mnists_weights_trained_10000.txt")
+models = loadModels(MODEL_WEIGHTS_FILENAME)
+estimatedY = evaluateAll(models, X_train)
 
-# evaluate the model usin the test dataset
-estimatedY = evaluateAll(models, x_test)
+# print the metrics for train dataset
+print("Metrics for Train dataset")
+cm, cr = metrics(y_train, estimatedY, labels)
+print(cm)
+print(cr)
+
+# evaluate the model using the test dataset
+estimatedY = evaluateAll(models, X_test)
 
 # generate the metric using the results from test dataset
 cm, cr = metrics(y_test, estimatedY, labels)
 
-# print the metrics
+# print the metrics for test dataset
+print("Metrics for Test dataset")
 print(cm)
 print(cr)
