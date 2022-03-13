@@ -17,7 +17,7 @@ import PUJ.Model.Logistic
 # %% constants
 # constants
 
-MODEL_WEIGHTS = "mnists_weights.txt"
+MODEL_WEIGHTS = "mnists_weights_lasso.txt"
 
 # %% draw number
 ## draw number
@@ -55,7 +55,7 @@ def saveModel(models, modelFileName):
 
 
 # %% train the model
-def trainModels(models, x, y, learningRate=1e-2):
+def trainModels(models, x, y, learningRate=1e-1):
     for i, model in enumerate(models):
 
         print("\ntraining model: ", model.label)
@@ -158,7 +158,7 @@ saveModel(models, MODEL_WEIGHTS)
 trainedModels = trainModels(models, XFlattened_train, y_train)
 saveModel(trainedModels, "./trained_weights/mnists_weights.txt")
 
-models = loadModels("./trained_weights/mnists_weights.txt")
+models = loadModels("trained_weights/mnists_weights.txt")
 
 print("METRICAS EN ENTRENAMIENTO")
 estimatedY = evaluateAll(models, XFlattened_train)

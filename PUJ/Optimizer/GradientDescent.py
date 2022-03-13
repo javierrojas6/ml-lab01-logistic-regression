@@ -8,10 +8,10 @@ class GradientDescent:
 
   '''
   '''
-  m_lambda = 0.00001
-  m_regularization_type = 'lasso'
+  m_lambda = 0.0001
+  m_regularization_type = 'ridge'
   m_Cost = None
-  m_LearningRate = 1e-2
+  m_LearningRate = 1e-1
   m_Epsilon = 1e-12
   m_NumberOfIterations = 1000
   m_RealIterations = 0
